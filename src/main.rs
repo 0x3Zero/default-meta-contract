@@ -12,7 +12,9 @@ use marine_rs_sdk::marine;
 use marine_rs_sdk::module_manifest;
 use marine_rs_sdk::MountedBinaryResult;
 use marine_rs_sdk::WasmLoggerBuilder;
+use types::EventLogParamResult;
 use types::MetaContract;
+use types::MetaContractEventResult;
 use types::Metadata;
 use types::SerdeMetadata;
 use types::Transaction;
@@ -132,6 +134,115 @@ pub fn on_mint(contract: MetaContract, data_key: String, token_id: String, data:
         metadatas: finals,
         error_string: "".to_string(),
     }
+}
+
+#[marine]
+pub fn on_event (
+  event_log: EventLogParamResult,
+  contract: MetaContract,
+  rpc_url: String,
+  abi_url: String,
+  chain_id: String,
+  contract_address: String,
+) -> Vec<MetaContractEventResult> {
+
+
+  let mut final_nft_metadata = vec![];
+  let mut token_id = "".to_string();
+  let mut event_result = vec![];
+  let mut error: Option<String> = None;
+
+  if event_log.event_name == "NFTify" { 
+    let curr_log = event_log.clone();
+    let find_token_id = curr_log.params.clone().into_iter().find(|obj| obj.name == "tokenId".to_string());
+    let find_data= curr_log.params.clone().into_iter().find(|obj| obj.name == "data".to_string());
+
+
+    match find_token_id {
+      Some(log_param) => {
+        if log_param.value != "" {
+          token_id = log_param.value;
+          log::info!("token_id: {}", token_id);
+        }
+      },
+      None => (),
+    }
+
+
+
+    match find_data {
+      Some(log_param) => {
+        if log_param.value != "" {
+          let data_bytes = &hex::decode(&log_param.value);
+
+          match data_bytes {
+            Ok(decoded) => {
+              let param_types = vec![
+                ParamType::String,
+                ParamType::String,
+                ParamType::String,
+              ];
+
+              let results = decode(&param_types, decoded);
+
+              match results {
+                Ok(result) => {
+                  if result.len() == 3 {
+                    
+                    let ipfs_multiaddr = result[1].clone().to_string();
+                    let cid = result[2].clone().to_string();
+                    
+                    let datasets = get(cid, ipfs_multiaddr, 0);
+                    let result: Result<Vec<DataStructFork>, serde_json::Error> =
+                        serde_json::from_str(&datasets);
+
+                    match result {
+                        Ok(datas) => {
+                            for data in datas {
+                                final_nft_metadata.push(FinalMetadata {
+                                    public_key: data.owner,
+                                    alias: "".to_string(),
+                                    content: data.cid,
+                                    version: data.version,
+                                    loose: 0,
+                                });
+
+                            }
+                        }
+                        Err(e) => error = Some(format!("Invalid data structure: {}", e.to_string())),
+                    }
+                  }
+                },
+                Err(e) => error = Some(format!("Invalid data structure: {}", e.to_string())),
+              }
+            },
+            Err(e) => error = Some(format!("Invalid data structure: {}", e.to_string())),
+          }
+        }
+      },
+       None => ()
+    }
+  }
+
+  if !error.is_none() {
+    event_result.push( MetaContractEventResult {
+      result: false,
+      metadatas: vec![],
+      error_string: "No event/data to process".to_string(),
+      token_id: token_id.clone(),
+      meta_contract_id: "0x01".to_string()
+    })
+  }
+
+    event_result.push( MetaContractEventResult {
+      result:true,
+      metadatas: final_nft_metadata,
+      error_string: "".to_string(),
+      token_id: token_id.clone(),
+      meta_contract_id: "0x01".to_string()
+    });
+
+    event_result
 }
 
 /**
