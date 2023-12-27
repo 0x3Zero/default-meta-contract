@@ -66,3 +66,32 @@ pub struct MetaContract {
 pub struct SerdeMetadata {
   pub loose: i64,
 }
+
+#[marine]
+#[derive(Debug, Deserialize, Clone)]
+pub struct EventLogParamResult {
+    pub event_name: String,
+    pub params: Vec<DataLogParam>,
+    pub success: bool,
+    pub error_msg: String,
+    pub data: String,
+    pub block_number: u64,
+    pub transaction_hash: String,
+}
+
+#[marine]
+#[derive(Debug, Deserialize, Clone)]
+pub struct DataLogParam {
+    pub name: String,
+    pub kind: String,
+    pub value: String,
+}
+
+#[marine]
+pub struct MetaContractEventResult {
+    pub result: bool,
+    pub metadatas: Vec<FinalMetadata>,
+    pub error_string: String,
+    pub token_id: String,
+    pub meta_contract_id: String,
+}
