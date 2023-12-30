@@ -104,7 +104,7 @@ pub fn on_mint(contract: MetaContract, data_key: String, token_id: String, data:
                                   public_key: data.owner,
                                   alias: "".to_string(),
                                   content: data.cid,
-                                  version: data.version,
+                                  version: data.data_key,
                                   loose: 0,
                               });
 
@@ -203,7 +203,7 @@ pub fn on_event (
                                     public_key: data.owner,
                                     alias: "".to_string(),
                                     content: data.cid,
-                                    version: data.version,
+                                    version: data.data_key,
                                     loose: 0,
                                 });
 

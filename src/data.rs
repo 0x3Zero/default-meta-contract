@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct DataStructFork {
     pub owner: String,
     pub cid: String,
-    pub version: String,
+    pub data_key: String,
 }
 
 #[derive(Serialize, Deserialize)]

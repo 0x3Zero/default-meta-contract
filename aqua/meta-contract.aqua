@@ -1,5 +1,19 @@
 module MetaContract declares *
 
+data DataLogParam:
+  name: string
+  kind: string
+  value: string
+
+data EventLogParamResult:
+  event_name: string
+  params: []DataLogParam
+  success: bool
+  error_msg: string
+  data: string
+  block_number: u64
+  transaction_hash: string
+
 data FinalMetadata:
   public_key: string
   alias: string
@@ -13,6 +27,13 @@ data MetaContract:
   meta_contract_id: string
   public_key: string
   cid: string
+
+data MetaContractEventResult:
+  result: bool
+  metadatas: []FinalMetadata
+  error_string: string
+  token_id: string
+  meta_contract_id: string
 
 data MetaContractResult:
   result: bool
@@ -50,5 +71,6 @@ data Transaction:
 
 service MetaContract("meta-contract"):
   on_clone() -> bool
+  on_event(event_log: EventLogParamResult, contract: MetaContract, rpc_url: string, abi_url: string, chain_id: string, contract_address: string) -> []MetaContractEventResult
   on_execute(contract: MetaContract, metadatas: []Metadata, transaction: Transaction) -> MetaContractResult
   on_mint(contract: MetaContract, data_key: string, token_id: string, data: string) -> MetaContractResult
